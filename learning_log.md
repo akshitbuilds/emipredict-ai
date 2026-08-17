@@ -45,3 +45,61 @@ A: Coerce definition and object explanation
 
 ### One-line takeaway
 -if CSV is too big then pandas do by chunks and chunks and we forced low_memory=False, which does a full-column scan instead of pandas' default chunked reading
+
+## Day 3 — [15-08-26] — Cleaning Strategy & Imputation
+
+### Must-remember check (I ask, you answer)
+Q1: Why did we predict "same rows" for monthly_rent/bank_balance, and what did the actual overlap check reveal?
+A1:because missing value is same so we thought its same rows but onky 15 rows are same all others are diff
+
+Q2: Walk through the age fix regex in your own words — what pattern was it looking for, and what did it do?
+A2:we find out in age column there values are string plus decimal so we reomve extra decimal from the end. Then pd.to_numeric converted the now-valid text into real numbers.
+
+Q3: Why median instead of mean for monthly_rent, bank_balance, credit_score, emergency_fund?
+A3:you already saw max_monthly_emi is right-skewed with outliers dragging the mean upward; these financial columns (rent, balance, credit score) are very likely skewed the same way, and median resists outliers better than mean does.
+
+Q4: Why "Unknown" instead of filling education with the most common value?
+A4:Silently assigning a guessed education level to real people is a worse assumption than just labeling it honestly as missing.
+
+Q5: Why did the first imputation attempt crash with a TypeError, and what fixed it?
+A5: .median() failed because it tried to compute a median on values like '303200.0' — with quotes, meaning that column is stored as text (object dtype), not real numbers. Same category of issue as age
+
+### Fuzziest part of today
+A:median concept and also age error solving
+
+### Findings to carry into Day 4
+- age bug: fixed, 0 remaining NaN
+- monthly_rent/bank_balance overlap: only 15 shared rows — separate issues, not one systematic gap
+- All missing values resolved (0 across dataset)
+- Cleaned file saved: data/processed/emi_cleaned.csv, gitignored (same reasoning as raw)
+
+### One-line takeaway
+-numbers that look like numbers in a CSV can still be text underneath — always verify the dtype before running math on a column, don't assume.
+
+
+## Day 4 — [17-08-26] — Feature Engineering
+
+### Must-remember check (I ask, you answer)
+Q1: Why does raw monthly_salary get flagged as object dtype even though it has zero missing values — what does that reveal about the relationship between "missing values" and "correct dtype"?
+A1:
+
+Q2: In your own words, why is a ratio like loan_to_income_ratio a stronger signal for a model than the raw requested_amount column alone?
+A2:
+
+Q3: Why is a large negative disposable_income not treated as a data error?
+A3:
+
+Q4: What does the notebook losing bank_balance's fixed dtype (reverting to object) after the earlier hang/restart teach you about trusting an active notebook session versus a saved checkpoint file?
+A4:
+
+### Fuzziest part of today
+A:
+
+### Findings to carry into Day 5
+- 5 new engineered features created: debt_to_income_ratio, loan_to_income_ratio, disposable_income, savings_rate, dependents_ratio
+- monthly_salary had a hidden object-dtype bug despite 0 missing values — fixed via pd.to_numeric + median fill
+- savings_rate is heavily right-skewed (max 218x mean) — flagged for possible scaling before linear models
+- Final feature-engineered dataset saved to data/processed/emi_features.csv
+
+### One-line takeaway
+-

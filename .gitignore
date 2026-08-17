@@ -1,5 +1,6 @@
 venv/
 mlruns/
+mlflow.db
 data/raw/*.csv
 data/processed/*.csv
 __pycache__/
