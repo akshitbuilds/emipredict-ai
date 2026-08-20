@@ -81,25 +81,110 @@ A:median concept and also age error solving
 
 ### Must-remember check (I ask, you answer)
 Q1: Why does raw monthly_salary get flagged as object dtype even though it has zero missing values — what does that reveal about the relationship between "missing values" and "correct dtype"?
-A1:
+A1:no missing values" and "correct dtype" are two completely separate checks — passing one tells you nothing about the other.
 
 Q2: In your own words, why is a ratio like loan_to_income_ratio a stronger signal for a model than the raw requested_amount column alone?
-A2:
+A2:is this loan request reasonable relative to what they earn," which is close to the actual business question (emi_eligibility) itself
 
 Q3: Why is a large negative disposable_income not treated as a data error?
-A3:
+A3:Because it can happened if someone spening more than earning
 
 Q4: What does the notebook losing bank_balance's fixed dtype (reverting to object) after the earlier hang/restart teach you about trusting an active notebook session versus a saved checkpoint file?
-A4:
+A4:this notebook session's df is in a partially-inconsistent state — likely a side effect of the earlier hang + Interrupt/Restart, where some cells got re-run and others didn't, so what's currently in memory doesn't fully match what Day 3 actually produced and saved to disk.
 
 ### Fuzziest part of today
-A:
+A:All 5 formulas
 
 ### Findings to carry into Day 5
 - 5 new engineered features created: debt_to_income_ratio, loan_to_income_ratio, disposable_income, savings_rate, dependents_ratio
 - monthly_salary had a hidden object-dtype bug despite 0 missing values — fixed via pd.to_numeric + median fill
 - savings_rate is heavily right-skewed (max 218x mean) — flagged for possible scaling before linear models
 - Final feature-engineered dataset saved to data/processed/emi_features.csv
+
+### One-line takeaway
+-missing-value checks and dtype checks are two completely separate things, and passing one tells you nothing about the other.
+
+## Day 5 — [18-08-26] — Baseline Classification Models
+
+### Must-remember check (I ask, you answer)
+Q1: Why do we drop emi_eligibility and max_monthly_emi from X before training — what would happen if we left them in?
+A1:We remove the answer from the facts on purpose — if the model could see the answer while learning, it would just cheat by copying it,
+
+Q2: What does stratify=y_class actually protect against, and how did we prove it worked?
+A2:stratify forces the split to preserve that same 77/18/4.3 ratio in both the training and test sets
+
+Q3: Explain, in your own words, why the plain Logistic Regression looked good (86% accuracy) but was actually a bad model.
+A3:sounds great — but it caught zero actual High_Risk applicants. It just learned "when in doubt, guess the common answer,"
+
+Q4: Why did Random Forest's accuracy (93%) hide a similar problem to the first model?
+A4:High_Risk is only 4.3% of all applicants, most of those 100 judges barely ever see a High_Risk example while they're learning.
+
+Q5: What made XGBoost genuinely different from the other three — not just a better number, but a better result?
+A5:trees are built one after another, and each new tree specifically tries to fix the mistakes the previous ones made. It's stricter about one thing: it needs the answer column as plain numbers (0, 1, 2), not text words.
+
+### Fuzziest part of today
+A:All thre model explanation
+
+### Findings to carry into Day 6
+- 4 classification models trained and compared: plain LogReg, balanced LogReg, balanced Random Forest, balanced XGBoost
+- Winner so far: XGBoost — 93% accuracy AND 0.94 High_Risk recall
+- Key lesson: accuracy alone is misleading on imbalanced data — always check per-class recall
+- All runs logged in MLflow (mlflow.db) for comparison
+
+### One-line takeaway
+-never trust accuracy alone on imbalanced data — always check recall on the rare class specifically
+
+
+## Day 6 — [20-08-26] — Regression Modeling
+
+### Must-remember check (I ask, you answer)
+Q1: Why doesn't "accuracy" apply to regression the way it did for classification — what do we measure instead?
+A1:
+
+Q2: In your own words, what's the difference between what MAE measures and what RMSE measures?
+A2:
+
+Q3: Why did Linear Regression perform noticeably worse than the two tree-based models, given what we already knew about max_monthly_emi's distribution?
+A3:
+
+Q4: XGBoost had the better RMSE, but Random Forest had the better MAE — what does that difference actually tell us about how each model handles outliers vs. typical cases?
+A4:
+
+### Fuzziest part of today
+A:
+
+### Findings to carry into Day 7
+- 3 regression models trained: Linear Regression, Random Forest, XGBoost
+- Results — Linear: RMSE 4178, MAE 3000, R² 0.70 | Random Forest: RMSE 934, MAE 210, R² 0.985 | XGBoost: RMSE 710, MAE 248, R² 0.9915
+- Winner: XGBoost (best RMSE, most consistent on outliers) — provisional pick for final regressor
+
+### One-line takeaway
+-
+
+
+## Day 7 — [20-08-26] — Final Model Selection & Saving
+
+### Must-remember check (I ask, you answer)
+Q1: Why doesn't the deployed app depend on MLflow at runtime — what's the actual handoff point between training and serving?
+A1:
+
+Q2: In your own words, why does feature_columns.pkl need to exist — what real problem would happen without it?
+A2:
+
+Q3: In your own words, why does label_encoder.pkl need to exist — what real problem would happen without it?
+A3:
+
+Q4: Why did we have to retrain the classifier from scratch today instead of reusing the one from Day 5?
+A4:
+
+### Fuzziest part of today
+A:
+
+### Findings to carry into Day 8
+- Final models saved: models/classifier_xgb.pkl, models/regressor_xgb.pkl
+- Support files saved: models/label_encoder.pkl, models/feature_columns.pkl
+- Classifier confirmed matching Day 5 performance: 93% accuracy, 0.93 High_Risk recall
+- Both models are now fully self-contained — ready to be loaded directly by the Streamlit app, no MLflow dependency
 
 ### One-line takeaway
 -
