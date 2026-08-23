@@ -139,19 +139,19 @@ A:All thre model explanation
 
 ### Must-remember check (I ask, you answer)
 Q1: Why doesn't "accuracy" apply to regression the way it did for classification — what do we measure instead?
-A1:
+A1:Accuracy means 'exactly right or wrong' — that works for categories like Eligible/High_Risk, but doesn't work for a continuous number like EMI amount, where a prediction can be close but not exact. So instead of accuracy, we measure how far off the predictions are on average, using RMSE, MAE, and R²
 
 Q2: In your own words, what's the difference between what MAE measures and what RMSE measures?
-A2:
+A2:MAE is take every prediction mistake average all of that together ad RMSE is Very similar idea, but it punishes big mistakes much more harshly than small ones.
 
 Q3: Why did Linear Regression perform noticeably worse than the two tree-based models, given what we already knew about max_monthly_emi's distribution?
-A3:
+A3:Because linear regressoion just made a simple straight line relationship the ₹4,000 EMI people and the rare ₹90,000 EMI people alike.
 
 Q4: XGBoost had the better RMSE, but Random Forest had the better MAE — what does that difference actually tell us about how each model handles outliers vs. typical cases?
-A4:
+A4:XGBoost is more consistent on the rare, extreme outlier cases (fewer huge misses, which is why its RMSE is lower), while Random Forest is slightly more accurate on typical, everyday cases
 
 ### Fuzziest part of today
-A:
+A:All three defination
 
 ### Findings to carry into Day 7
 - 3 regression models trained: Linear Regression, Random Forest, XGBoost
@@ -159,26 +159,25 @@ A:
 - Winner: XGBoost (best RMSE, most consistent on outliers) — provisional pick for final regressor
 
 ### One-line takeaway
--
+-Accuracy doesn't work for regression, or how tree models beat the straight line
 
 
 ## Day 7 — [20-08-26] — Final Model Selection & Saving
 
 ### Must-remember check (I ask, you answer)
 Q1: Why doesn't the deployed app depend on MLflow at runtime — what's the actual handoff point between training and serving?
-A1:
+A1:Today we take the two winning models (XGBoost classifier, XGBoost regressor) and save them as standalone files the app can load directly, with zero MLflow dependency at runtime.
 
 Q2: In your own words, why does feature_columns.pkl need to exist — what real problem would happen without it?
-A2:
+A2:f we don't remember the exact column names and order the model was trained on, and instead let the app regenerate its own encoding from scratch, small mismatches can sneak in — wrong column names or order — and the model would silently misread the input, giving wrong predictions with no error shown.
 
 Q3: In your own words, why does label_encoder.pkl need to exist — what real problem would happen without it?
-A3:
-
+A3:The model's predictions come out as plain numbers (0, 1, 2), not words. Without label_encoder.pkl, the app might show a user the wrong word for their result, or worse, get the number-to-word mapping backwards and tell a genuinely High_Risk person they're Eligible.
 Q4: Why did we have to retrain the classifier from scratch today instead of reusing the one from Day 5?
-A4:
+A4:Because the Day 5 kernel session was lost — closing/reopening VS Code wipes everything in memory, including trained models. We had no saved file for that specific classifier, so retraining fresh from the same settings was the only way to get a real, working model object to save.
 
 ### Fuzziest part of today
-A:
+A:Ml flow and feature_column.pxl explanation
 
 ### Findings to carry into Day 8
 - Final models saved: models/classifier_xgb.pkl, models/regressor_xgb.pkl
@@ -187,4 +186,4 @@ A:
 - Both models are now fully self-contained — ready to be loaded directly by the Streamlit app, no MLflow dependency
 
 ### One-line takeaway
--
+-Saving feature_columns.pkl and label_encoder.pkl now means the app can guarantee that match later, instead of us trying to recreate this exact logic from memory during Day 8.
